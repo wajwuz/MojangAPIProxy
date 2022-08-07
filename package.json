@@ -5,7 +5,7 @@
   "main": "./dist/app.js",
   "scripts": {
     "start": "node ./dist/app.js",
-    "test": "nodemon --ignore ./client/ ./dist/app.js"
+    "test": "nodemon --ignore ./index/ ./dist/app.js"
   },
   "author": "Zeeraa",
   "dependencies": {
@@ -14,6 +14,8 @@
     "axios": "^0.27.2",
     "console-stamp": "^3.0.6",
     "express": "^4.18.1",
+    "is-valid-uuid-v4": "^1.2.2",
+    "node-cache": "^5.1.2",
     "nodemon": "^2.0.19",
     "typescript": "^4.7.4"
   }
