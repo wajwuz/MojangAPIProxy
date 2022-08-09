@@ -35,7 +35,7 @@ export default class MojangAPIProxyServer {
         this.express.get("/username_to_uuid/:username", async (req: Express.Request, res: Express.Response) => {
             const username: string = "" + req.params.username;
 
-            if (username.length == 0 || username.length > 16 || !username.match(/^[0-9a-zA-Z]+$/)) {
+            if (username.length == 0 || username.length > 16 || !username.match(/^[a-zA-Z0-9_]+$/)) {
                 res.status(400).send("400: Invalid username");
                 return;
             }
