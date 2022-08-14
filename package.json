@@ -4,6 +4,7 @@
   "description": "A proxy to use data from the mojang api in your apps without the need to worry about rate limits or cors policy",
   "main": "./dist/app.js",
   "scripts": {
+    "build": "tsc --build",
     "start": "node ./dist/app.js",
     "test": "nodemon --ignore ./index/ ./dist/app.js"
   },

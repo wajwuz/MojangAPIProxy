@@ -5,4 +5,7 @@ CODE_OF_CONDUCT.md
 .dockerignore
 README.md
 LICENSE
+dist
 config.json
+node_modules
+.node_modules
