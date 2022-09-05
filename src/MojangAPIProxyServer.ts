@@ -9,25 +9,29 @@ import CachedUsernameToUUIDData from "./responses/CachedUsernameToUUIDData";
 import CachedProfileData from "./responses/CachedProfileData";
 import Profile from "./responses/Profile";
 import { setCorsHeaders } from "./cors/CorsMiddleware";
+import IConfiguration from "./IConfiguration";
 
 export default class MojangAPIProxyServer {
     private express: Express.Express;
     private http: HTTP.Server;
     private cache: NodeCache;
 
-    constructor(port: number) {
+    constructor(config: IConfiguration) {
         console.log("Starting mojang api proxy instance...");
 
         this.express = Express();
-        this.express.set("port", port);
+        this.express.set("port", config.port);
 
         this.express.disable('x-powered-by');
         this.express.use('/', Express.static(__dirname + '/../index'));
         this.express.use(setCorsHeaders);
 
+        console.log("Cache TTL: " + config.cache.ttl);
+        console.log("Cache checkperiod: " + config.cache.checkperiod);
+
         this.cache = new NodeCache({
-            stdTTL: 120,
-            checkperiod: 120
+            stdTTL: config.cache.ttl,
+            checkperiod: config.cache.checkperiod
         });
 
         this.http = new HTTP.Server(this.express);
@@ -141,8 +145,8 @@ export default class MojangAPIProxyServer {
             res.status(200).send(JSON.stringify(result, null, 4));
         });
 
-        this.http.listen(port, function () {
-            console.log("Listening on port: " + port);
+        this.http.listen(config.port, function () {
+            console.log("Listening on port: " + config.port);
         });
     }
 }
