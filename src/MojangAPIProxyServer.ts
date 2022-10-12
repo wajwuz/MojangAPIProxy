@@ -10,6 +10,7 @@ import CachedProfileData from "./responses/CachedProfileData";
 import Profile from "./responses/Profile";
 import { setCorsHeaders } from "./cors/CorsMiddleware";
 import IConfiguration from "./IConfiguration";
+import morgan from "morgan";
 
 export default class MojangAPIProxyServer {
     private express: Express.Express;
@@ -25,6 +26,7 @@ export default class MojangAPIProxyServer {
         this.express.disable('x-powered-by');
         this.express.use('/', Express.static(__dirname + '/../index'));
         this.express.use(setCorsHeaders);
+        this.express.use(require("morgan")("combined"));
 
         console.log("Cache TTL: " + config.cache.ttl);
         console.log("Cache checkperiod: " + config.cache.checkperiod);
