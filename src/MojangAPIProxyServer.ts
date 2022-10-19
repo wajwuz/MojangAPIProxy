@@ -10,7 +10,6 @@ import CachedProfileData from "./responses/CachedProfileData";
 import Profile from "./responses/Profile";
 import { setCorsHeaders } from "./cors/CorsMiddleware";
 import IConfiguration from "./IConfiguration";
-import morgan from "morgan";
 
 export default class MojangAPIProxyServer {
     private express: Express.Express;
