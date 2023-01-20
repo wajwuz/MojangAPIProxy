@@ -1,6 +1,6 @@
 import * as FS from "fs";
 import IConfiguration from "./configuration/IConfiguration";
-import MojangAPIProxyServer from "./MojangAPIProxyServer";
+import MojangAPIProxyServer from "./handlers/MojangHandler";
 
 if (!FS.existsSync("./config")) {
 	FS.mkdirSync("./config");

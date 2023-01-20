@@ -1,12 +1,12 @@
 import HTTP from "http";
 import Express from "express";
 import axios from "axios";
-import UUIDUtils from "./helpers/UUIDHelper";
+import UUIDUtils from "../helpers/UUIDHelper";
 import NodeCache from "node-cache";
-import UsernameToUUIDResponse from "./responses/UsernameToUUIDResponse";
-import CachedUsernameToUUIDData from "./responses/CachedUsernameToUUIDData";
-import { setCorsHeaders } from "./cors/CorsMiddleware";
-import IConfiguration from "./configuration/IConfiguration";
+import UsernameToUUIDResponse from "../responses/UsernameToUUIDResponse";
+import CachedUsernameToUUIDData from "../responses/CachedUsernameToUUIDData";
+import { setCorsHeaders } from "../cors/CorsMiddleware";
+import IConfiguration from "../configuration/IConfiguration";
 
 export default class MojangAPIProxyServer {
     private express: Express.Express;
