@@ -1,15 +1,12 @@
 import HTTP from "http";
 import Express from "express";
 import axios from "axios";
-import UUIDUtils from "./UUIDUtils";
+import UUIDUtils from "./helpers/UUIDHelper";
 import NodeCache from "node-cache";
-import { isValidUUIDV4 } from "is-valid-uuid-v4";
 import UsernameToUUIDResponse from "./responses/UsernameToUUIDResponse";
 import CachedUsernameToUUIDData from "./responses/CachedUsernameToUUIDData";
-import CachedProfileData from "./responses/CachedProfileData";
-import Profile from "./responses/Profile";
 import { setCorsHeaders } from "./cors/CorsMiddleware";
-import IConfiguration from "./IConfiguration";
+import IConfiguration from "./configuration/IConfiguration";
 
 export default class MojangAPIProxyServer {
     private express: Express.Express;
@@ -17,18 +14,11 @@ export default class MojangAPIProxyServer {
     private cache: NodeCache;
 
     constructor(config: IConfiguration) {
-        console.log("Starting mojang api proxy instance...");
-
         this.express = Express();
         this.express.set("port", config.port);
 
         this.express.disable('x-powered-by');
-        this.express.use('/', Express.static(__dirname + '/../index'));
         this.express.use(setCorsHeaders);
-        this.express.use(require("morgan")("combined"));
-
-        console.log("Cache TTL: " + config.cache.ttl);
-        console.log("Cache checkperiod: " + config.cache.checkperiod);
 
         this.cache = new NodeCache({
             stdTTL: config.cache.ttl,
@@ -37,39 +27,41 @@ export default class MojangAPIProxyServer {
 
         this.http = new HTTP.Server(this.express);
 
-        this.express.get("/username_to_uuid/:username", async (req: Express.Request, res: Express.Response) => {
-            const username: string = "" + req.params.username;
+        this.express.get("/user/:username", async (req: Express.Request, res: Express.Response) => {
+            const username: string = req.params.username;
 
             if (username.length == 0 || username.length > 16 || !username.match(/^[a-zA-Z0-9_]+$/)) {
-                res.status(400).send("400: Invalid username");
+                res.status(400).json({ response: 400, reason: "Invalid username (doesn't match criteria)" });
                 return;
             }
 
-            const cacheKey = "username_to_uuid:" + username.toLocaleLowerCase();
+            const cacheKey = "profile:" + username.toLocaleLowerCase();
 
             if (this.cache.has(cacheKey)) {
                 const result = this.cache.get<CachedUsernameToUUIDData>(cacheKey);
-                if (result.found) {
-                    console.log("Fetched uuid of " + username + " from cache");
-                    res.status(200).send(JSON.stringify(result.data, null, 4));
-                    return;
+
+                if (result.cached) {
+                    res.status(200).json(result);
                 } else {
-                    console.log("Could not find user " + username + " from cache");
-                    res.status(404).send("404: user not found");
-                    return;
+                    res.status(404).json({ response: 404, reason: "User not found" });
                 }
+                return;
             }
 
-            const response = await (await axios.get("https://api.mojang.com/users/profiles/minecraft/" + username));
+            const response = await axios.get("https://api.mojang.com/users/profiles/minecraft/" + username);
+            const { status } = response;
 
-            if (response.status == 204) {
+            if (status == 204) {
                 const cacheData: CachedUsernameToUUIDData = {
                     data: null,
-                    found: false
+                    cached: false
                 }
+
                 this.cache.set(cacheKey, cacheData);
-                console.log("Could not find user " + username + " from mojang api");
-                res.status(404).send("404: user not found");
+                res.status(404).json({ response: 404, reason: "User not found" });
+                return;
+            } else if (status == 429) {
+                res.status(429).json({ response: 429, reason: "Ratelimit exception" });
                 return;
             }
 
@@ -79,71 +71,11 @@ export default class MojangAPIProxyServer {
 
             const cacheData: CachedUsernameToUUIDData = {
                 data: result,
-                found: true
+                cached: true
             }
 
             this.cache.set(cacheKey, cacheData);
-
-            console.log("Fetched uuid of " + username + " from mojang api");
-            res.header("Content-Type", 'application/json');
-            res.status(200).send(JSON.stringify(result, null, 4));
-        });
-
-        this.express.get("/profile/:uuid", async (req: Express.Request, res: Express.Response) => {
-            let uuid: string = "" + req.params.uuid;
-
-            uuid = uuid.toLocaleLowerCase();
-
-            if (uuid.length == 32) {
-                uuid = UUIDUtils.expandUUID(uuid);
-            }
-
-            if (!isValidUUIDV4(uuid)) {
-                res.status(400).send("400: Invalid uuid");
-                return;
-            }
-
-            const cacheKey = "profile:" + uuid;
-
-            if (this.cache.has(cacheKey)) {
-                const result = this.cache.get<CachedProfileData>(cacheKey);
-                if (result.found) {
-                    console.log("Fetched profile of " + uuid + " from cache");
-                    res.header("Content-Type", 'application/json');
-                    res.status(200).send(JSON.stringify(result.data, null, 4));
-                    return;
-                } else {
-                    console.log("Could not find profile " + uuid + " from cache");
-                    res.status(404).send("404: user not found");
-                    return;
-                }
-            }
-
-            const response = await (await axios.get("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid));
-
-            if (response.status == 204) {
-                const cacheData: CachedProfileData = {
-                    data: null,
-                    found: false
-                }
-                this.cache.set(cacheKey, cacheData);
-                console.log("Could not find profile " + uuid + " from mojang api");
-                res.status(404).send("404: user not found");
-                return;
-            }
-
-            const result: Profile = response.data;
-
-            const cacheData: CachedProfileData = {
-                data: result,
-                found: true
-            }
-
-            this.cache.set(cacheKey, cacheData);
-
-            console.log("Fetched profile of " + uuid + " from mojang api");
-            res.header("Content-Type", 'application/json');
-            res.status(200).send(JSON.stringify(result, null, 4));
+            res.status(200).json(result);
         });
 
         this.http.listen(config.port, function () {

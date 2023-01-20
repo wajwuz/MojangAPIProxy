@@ -1,8 +1,6 @@
 import * as FS from "fs";
-import IConfiguration from "./IConfiguration";
+import IConfiguration from "./configuration/IConfiguration";
 import MojangAPIProxyServer from "./MojangAPIProxyServer";
-
-require('console-stamp')(console, '[HH:MM:ss.l]');
 
 if (!FS.existsSync("./config")) {
 	FS.mkdirSync("./config");
